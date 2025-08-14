@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CHATBOT PTC1</title>
+  <style>
+    /* Reset nhẹ */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    /* Thanh tiêu đề */
+    .appbar {
+      position: sticky; top: 0; z-index: 10;
+      background: #3b82f6; /* xanh lam */
+      color: #fff;
+      padding: 14px 16px;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    /* Vùng nội dung */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+      padding-bottom: 92px; /* chừa chỗ cho thanh nhập cố định */
+    }
+
+    /* Thẻ hướng dẫn */
+    .guide {
+      background: #e9eef8;
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin: 10px auto 20px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.05) inset, 0 1px 2px rgba(0,0,0,.04);
+      max-width: 1000px;
+    }
+    .guide h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .guide p { margin: 6px 0; line-height: 1.5; }
+    .guide ul { margin: 8px 0 0 0; padding-left: 18px; }
+    .guide li { margin: 6px 0; }
+
+    /* Khung chat */
+    .chat {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 45vh;
+    }
+    .msg {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 10px;
+      max-width: 92%;
+    }
+    .msg .bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .bot   { justify-content: flex-start; }
+    .bot .bubble   { background: #ffffff; border: 1px solid #e5e7eb; }
+    .user  { justify-content: flex-end; }
+    .user .bubble  { background: #dbeafe; border: 1px solid #bfdbfe; }
+
+    .avatar {
+      flex: none;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 18px;
+      background: #e0ecff;
+      border: 1px solid #c7ddff;
+      color: #1e40af;
+    }
+
+    /* Thanh nhập cố định dưới cùng */
+    .composer {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: #ffffff;
+      border-top: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      display: flex; gap: 8px;
+      align-items: center;
+    }
+    .composer__wrap {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      display: flex; gap: 8px;
+    }
+    .input {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      font-size: 15px;
+      outline: none;
+    }
+    .input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+    .send {
+      flex: none;
+      min-width: 70px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 0;
+      background: #3b82f6;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .send[disabled] { opacity: .6; cursor: not-allowed; }
+
+    /* Loading dots */
+    .dots { display: inline-block; width: 22px; text-align: left }
+    .dots:after {
+      content: "…";
+      animation: dots 1.2s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0% { content:""; } 25% { content:"."; }
+      50% { content:".."; } 75% { content:"..."; } 100% { content:""; }
+    }
+
+    @media (max-width: 600px) {
+      .guide { border-radius: 12px; }
+      .msg .bubble { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="appbar">CHATBOT PTC1</header>
+
+  <main class="container">
+    <!-- Thẻ hướng dẫn giống ảnh -->
+    <section class="guide" aria-label="Hướng dẫn sử dụng">
+      <h3>🤖 Chào bạn! Tôi có thể giúp bạn tra cứu thông tin về TBA, MBA, SMBA, BDA, CAP, TC, MC, DCL, KH, TB, CS, TU, TI, rơ le, AQ, MNAQ.</h3>
+      <p>Vui lòng nhập đúng cú pháp để tra cứu: <em>[thiết bị cần tìm, tên trạm biến áp, ngăn lộ, chức năng rơ le hoặc chỉ danh]</em>.</p>
+      <ul>
+        <li>👉 Ví dụ: <strong>rơ le, sóc sơn, 271, F21</strong></li>
+        <li>👉 Ví dụ: <strong>ti, 220kV long biên, 271, TI271</strong></li>
+      </ul>
+    </section>
+
+    <!-- Khung hội thoại -->
+    <section id="chat" class="chat" aria-live="polite" aria-label="Hội thoại">
+      <!-- Tin nhắn bot mở đầu -->
+      <div class="msg bot">
+        <div class="avatar">🤖</div>
+        <div class="bubble">Xin chào! Nhập yêu cầu theo cú pháp để mình tra cứu giúp bạn.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Thanh nhập -->
+  <div class="composer">
+    <div class="composer__wrap">
+      <input id="input" class="input" type="text"
+             placeholder="Vui lòng chọn loại thiết bị bạn muốn tra cứu thông tin (ví dụ: rơ le, mc, tba)…"
+             autocomplete="off" />
+      <button id="sendBtn" class="send">Gửi</button>
+    </div>
+  </div>
+
+  <script>
+    // ====== CẤU HÌNH BACKEND ======
+    const API_URL = "/query"; // đổi nếu backend của bạn dùng đường dẫn khác
+
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function scrollToBottom() {
+      // Cuộn mượt xuống cuối
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
+    function addMessage(text, role = "user") {
+      const wrap = document.createElement("div");
+      wrap.className = `msg ${role}`;
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = role === "user" ? "🧑" : "🤖";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      chat.appendChild(wrap);
+      scrollToBottom();
+      return bubble;
+    }
+
+    function addLoading() {
+      const wrap = document.createElement("div");
+      wrap.className = "msg bot";
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = "🤖";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      const dots = document.createElement("span");
+      dots.className = "dots";
+      bubble.appendChild(dots);
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      chat.appendChild(wrap);
+      scrollToBottom();
+      return wrap; // trả về để xóa khi có kết quả
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      input.focus();
+
+      addMessage(text, "user");
+      const loadingEl = addLoading();
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        loadingEl.remove();
+        addMessage(data.reply || "Không có dữ liệu trả về.", "bot");
+      } catch (err) {
+        loadingEl.remove();
+        addMessage("⚠️ Lỗi kết nối tới máy chủ. Vui lòng thử lại hoặc liên hệ quản trị.", "bot");
+        console.error(err);
+      } finally {
+        sendBtn.disabled = false;
+        scrollToBottom();
+      }
+    }
+
+    // Sự kiện
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
